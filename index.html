@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krakowski Detektyw: Mapa Tajemnic</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        :root {
+            --bg-color: #0b1325;
+            --card-bg: #1c2541;
+            --accent-gold: #f4d03f;
+            --accent-blue: #00b4d8;
+            --text-light: #f8f9fa;
+            --text-muted: #95a5a6;
+            --success: #2ecc71;
+            --error: #e74c3c;
+        }
+
+        body {
+            font-family: 'Montserrat', 'Segoe UI', sans-serif;
+            background: var(--bg-color);
+            background-image: radial-gradient(circle at 20% 30%, #1e3a8a 0%, transparent 70%), 
+                              radial-gradient(circle at 80% 80%, #0d1b2a 0%, transparent 70%);
+            color: var(--text-light);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+            margin: 0 0 5px 0;
+            color: var(--accent-gold);
+            text-shadow: 0 0 10px rgba(244, 208, 63, 0.3);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        #game-container {
+            background: var(--card-bg);
+            border: 2px solid rgba(244, 208, 63, 0.2);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            max-width: 650px;
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        #game-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-gold), var(--accent-blue));
+        }
+
+        .view {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .view.active {
+            display: flex;
+        }
+
+        .grid-menu {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        @media(min-width: 480px) {
+            .grid-menu {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            padding: 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: center;
+        }
+
+        .menu-btn:hover {
+            background: rgba(0, 180, 216, 0.15);
+            border-color: var(--accent-blue);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 180, 216, 0.2);
+        }
+
+        .back-btn {
+            background: transparent;
+            border: 1px solid var(--text-muted);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            align-self: flex-start;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+        }
+
+        .back-btn:hover {
+            color: var(--text-light);
+            border-color: var(--text-light);
+        }
+
+        /* OKNO SKANERA */
+        #qr-reader-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 20px auto;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px dashed var(--accent-blue);
+            background: #111a36;
+        }
+
+        #qr-message {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 10px;
+            min-height: 24px;
+        }
+
+        .scan-instruction {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+
+        /* MAPA */
+        #level-map {
+            width: 100%;
+            height: 220px;
+            background: #111a36;
+            background-image: 
+                radial-gradient(rgba(244, 208, 63, 0.05) 1px, transparent 0),
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 0),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 0);
+            background-size: 20px 20px, 40px 40px, 40px 40px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #map-paths {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .map-line {
+            stroke: rgba(254, 208, 63, 0.25);
+            stroke-width: 3;
+            stroke-dasharray: 6, 6;
+            fill: none;
+            transition: stroke 0.4s ease;
+        }
+
+        .map-line.active {
+            stroke: var(--success);
+        }
+
+        .cookie-node {
+            width: 38px;
+            height: 38px;
+            background: #2c3e50;
+            border: 3px solid #34495e;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            position: absolute;
+            z-index: 2;
+            transition: all 0.4s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        #node-0 { left: 20%; top: 70%; }
+        #node-1 { left: 50%; top: 30%; }
+        #node-2 { left: 80%; top: 60%; }
+
+        .node-label {
+            position: absolute;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            transform: translate(-50%, 25px);
+        }
+
+        .cookie-node.completed {
+            background: rgba(46, 204, 113, 0.2);
+            border-color: var(--success);
+            color: var(--success);
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+        }
+
+        .cookie-node.active {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(0, 180, 216, 0.4);
+        }
+
+        #player-cookie {
+            position: absolute;
+            width: 46px;
+            height: 46px;
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            border: 3px solid var(--accent-gold);
+            border-radius: 50%;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            box-shadow: 0 0 25px rgba(230, 126, 34, 0.8);
+            pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transform: translate(-50%, -50%);
+        }
+
+        .tag {
+            align-self: center;
+            background: rgba(244, 208, 63, 0.1);
+            color: var(--accent-gold);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(244, 208, 63, 0.3);
+        }
+
+        .headline {
+            font-size: 1.3rem;
+            color: var(--accent-blue);
+            text-align: center;
+            margin: 0 0 20px 0;
+            font-weight: 700;
+        }
+
+        #question-box {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            text-align: center;
+            min-height: 60px;
+        }
+
+        .level-up-anim {
+            animation: levelUpPulse 0.5s ease-in-out;
+        }
+
+        @keyframes levelUpPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); border-color: var(--accent-gold); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        .answers-grid .menu-btn.correct-flash {
+            background: rgba(46, 204, 113, 0.2) !important;
+            border-color: var(--success) !important;
+            color: var(--success);
+        }
+
+        .answers-grid .menu-btn.wrong-flash {
+            background: rgba(231, 76, 60, 0.2) !important;
+            border-color: var(--error) !important;
+            color: var(--error);
+            animation: shake 0.4s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Krakowski Detektyw</h1>
+    <div class="subtitle">ZDOBYWAJ POZIOMY NA MAPIE TAJEMNIC</div>
+    
+    <div id="game-container">
+        
+        <div id="view-scan" class="view">
+            <div class="tag">Weryfikacja Przepustki</div>
+            <div class="headline">Zeskanuj główny kod QR gry</div>
+            <p class="scan-instruction">Aby rozpocząć zabawę i odblokować bazę pytań, nakieruj aparat na kod QR dostarczony przez organizatora.</p>
+            
+            <div id="qr-reader-container">
+                <div id="qr-reader" style="width: 100%;"></div>
+            </div>
+            <div id="qr-message"></div>
+        </div>
+        
+        <div id="view-categories" class="view">
+            <div class="headline">Wybierz Główną Kategorię</div>
+            <div class="grid-menu" id="categories-list"></div>
+        </div>
+
+        <div id="view-subcategories" class="view">
+            <button class="back-btn" onclick="switchView('view-categories')">← Powrót do Kategorii</button>
+            <div class="tag" id="selected-cat-tag">Kategoria</div>
+            <div class="headline">Wybierz Podkategorię (Pulę pytań)</div>
+            <div class="grid-menu" id="subcategories-list"></div>
+        </div>
+
+        <div id="view-quiz" class="view">
+            <button class="back-btn" onclick="switchView('view-subcategories')">← Zmień Podkategorię</button>
+            
+            <div class="tag" id="quiz-cat-tag">Kategoria</div>
+            <div class="headline" id="quiz-subcat-title">Podkategoria</div>
+
+            <div id="level-map">
+                <svg id="map-paths">
+                    <line id="path-0" class="map-line" />
+                    <line id="path-1" class="map-line" />
+                </svg>
+
+                <div id="player-cookie">🍪</div>
+                
+                <div class="cookie-node" id="node-0">1<div class="node-label">Przedbramie</div></div>
+                <div class="cookie-node" id="node-1">2<div class="node-label">Dziedziniec</div></div>
+                <div class="cookie-node" id="node-2">3<div class="node-label">Skarbiec</div></div>
+            </div>
+
+            <div id="question-box">Treść pytania...</div>
+            <div class="grid-menu answers-grid" id="answers-container"></div>
+        </div>
+
+        <div id="view-win" class="view">
+            <div class="headline" style="color: var(--accent-gold); font-size: 1.6rem;">Pula Ukończona! 🍪</div>
+            <div id="win-message" style="text-align: center; margin: 20px 0; line-height: 1.6;">Doskonale poradzisz sobie z tą dziedziną wiedzy.</div>
+            <button class="menu-btn" style="background: var(--accent-blue); color: white;" onclick="switchView('view-categories')">Wybierz inną kategorię</button>
+        </div>
+
+    </div>
+
+    <script>
+        const gameDatabase = {
+            "Rynek Główny": {
+                "Sukiennice": [
+                    { question: "Co znajduje się na dachu attyki Sukiennic w formie rzeźb?", answers: ["Maszkarony (karykaturalne twarze)", "Figury polskich królów", "Rzeźby gołębi i orłów"], correct: 0 },
+                    { question: "Jaki przedmiot wisi w jednym z przejść wewnątrz Sukiennic?", answers: ["Żelazny topór rycerski", "Średniowieczny nóż", "Złoty klucz do bram miasta"], correct: 1 },
+                    { question: "Co mieści się obecnie na pierwszym piętrze Sukiennic?", answers: ["Galeria Malarstwa Polskiego", "Skarbiec miejski", "Restauracja u Wierzynka"], correct: 0 }
+                ],
+                "Wieża Ratuszowa": [
+                    { question: "Jakie zwierzęta wykute z kamienia strzegą wejścia do wieży?", answers: ["Dwa Smoki", "Dwa Gryfy", "Dwa Lwy"], correct: 2 },
+                    { question: "Co stało tuż obok wieży zanim zburzono to w XIX wieku?", answers: ["Główny, ogromny gmach Ratusza", "Wielka stajnia królewska", "Mury obronne"], correct: 0 },
+                    { question: "Dlaczego wieża jest lekko pochylona (o ok. 55 cm)?", answers: ["Przez uderzenie pioruna", "Przez potężną wichurę w 1703 roku", "Wskutek wady konstrukcyjnej fundamentów"], correct: 1 }
+                ]
+            },
+            "Wawel i Okolice": {
+                "Smok Wawelski": [
+                    { question: "Kto według najpopularniejszej legendy pokonał Smoka Wawelskiego?", answers: ["Szewczyk Dratewka (Skuba)", "Król Krak", "Rycerz z Wiednia"], correct: 0 },
+                    { question: "Co ile minut rzeźba smoka pod Wawelem naturalnie zieje prawdziwym ogniem?", answers: ["Co 5 minut", "Co 10 minut", "Co 15 minut"], correct: 0 },
+                    { question: "Czym szewc wypchał barana, którego podrzucił smokowi?", answers: ["Prochem strzelniczym", "Siarką", "Ostrym pieprzem"], correct: 1 }
+                ],
+                "Katedra Wawelska": [
+                    { question: "Jak nazywa się najsłynniejszy, potężny dzwon wiszący na wieży Katedry?", answers: ["Dzwon Zygmunta", "Dzwon Kazimierza", "Dzwon Krakusa"], correct: 0 },
+                    { question: "Jakie nietypowe przedmioty wiszą na łańcuchach przy wejściu do Katedry?", answers: ["Kości stworzeń kopalnych (np. mamuta)", "Stare miecze rycerskie", "Kotwice statków floty wiślanej"], correct: 0 },
+                    { question: "Która słynna kaplica Katedry posiada charakterystyczną, czysto złotą kopułę?", answers: ["Kaplica Wazów", "Kaplica Zygmuntowska", "Kaplica Świętokrzyska"], correct: 1 }
+                ]
+            }
+        };
+
+        const GLOBAL_ACCESS_CODE = "KRAKOW-DETEKTYW-2026";
+
+        let activeCategory = "";
+        let activeSubcategory = "";
+        let currentLevelIndex = 0;
+        let canClick = true;
+        let html5QrcodeScanner = null;
+
+        const playerCookie = document.getElementById('player-cookie');
+        const gameContainer = document.getElementById('game-container');
+
+        function switchView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            
+            if (viewId === 'view-categories') renderCategories();
+        }
+
+        // SPRAWDZENIE STATUSU BLOKADY PRZY URUCHOMIENIU
+        function checkGameAccess() {
+            // Sprawdzamy czy w pamięci przeglądarki zapisano już poprawny kod
+            const isUnlocked = localStorage.getItem('krakow_game_unlocked');
+
+            if (isUnlocked === 'true') {
+                // Jeśli gra była już odblokowana, przechodzimy prosto do menu
+                switchView('view-categories');
+            } else {
+                // W przeciwnym razie odpalamy skaner na dzień dobry
+                initStartScanner();
+            }
+        }
+
+        function initStartScanner() {
+            switchView('view-scan');
+            
+            const msgDiv = document.getElementById('qr-message');
+            msgDiv.innerText = "Uruchamianie aparatu...";
+            msgDiv.style.color = "var(--text-muted)";
+
+            html5QrcodeScanner = new Html5Qrcode("qr-reader");
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, 
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).then(() => {
+                msgDiv.innerText = "Wyceluj aparat w kod QR.";
+            }).catch(err => {
+                msgDiv.innerText = "Błąd aparatu. Sprawdź HTTPS lub uprawnienia.";
+                msgDiv.style.color = "var(--error)";
+                console.error(err);
+            });
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            const msgDiv = document.getElementById('qr-message');
+
+            if (decodedText.trim() === GLOBAL_ACCESS_CODE) {
+                msgDiv.innerText = "Dostęp przyznany! Witamy w grze.";
+                msgDiv.style.color = "var(--success)";
+                
+                // ZAPISUJEMY W LOCALSTORAGE, ŻE GRA JEST ODBLOKOWANA
+                localStorage.setItem('krakow_game_unlocked', 'true');
+                
+                if (html5QrcodeScanner) {
+                    html5QrcodeScanner.stop().then(() => {
+                        setTimeout(() => {
+                            switchView('view-categories');
+                        }, 800);
+                    });
+                }
+            } else {
+                msgDiv.innerText = "Niepoprawny kod QR! Spróbuj ponownie.";
+                msgDiv.style.color = "var(--error)";
+            }
+        }
+
+        function onScanFailure(error) {}
+
+        function renderCategories() {
+            const container = document.getElementById('categories-list');
+            container.innerHTML = '';
+            
+            Object.keys(gameDatabase).forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = 'menu-btn';
+                btn.innerText = cat;
+                btn.onclick = () => selectCategory(cat);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectCategory(catName) {
+            activeCategory = catName;
+            document.getElementById('selected-cat-tag').innerText = catName;
+            
+            const container = document.getElementById('subcategories-list');
+            container.innerHTML = '';
+
+            Object.keys(gameDatabase[catName]).forEach(subCat => {
+                const btn = document.createElement('button');
+                btn.className = 'menu-btn';
+                btn.innerText = subCat;
+                btn.onclick = () => startQuizPula(subCat); // Wchodzi od razu bez skanowania!
+                container.appendChild(btn);
+            });
+
+            switchView('view-subcategories');
+        }
+
+        function startQuizPula(subCatName) {
+            activeSubcategory = subCatName;
+            currentLevelIndex = 0;
+            
+            document.getElementById('quiz-cat-tag').innerText = activeCategory;
+            document.getElementById('quiz-subcat-title').innerText = activeSubcategory;
+            
+            switchView('view-quiz');
+            loadQuizQuestion();
+        }
+
+        function updateMapStructure() {
+            const nodes = [];
+            for (let i = 0; i < 3; i++) {
+                nodes.push(document.getElementById(`node-${i}`));
+            }
+
+            for (let i = 0; i < 2; i++) {
+                const line = document.getElementById(`path-${i}`);
+                if (line && nodes[i] && nodes[i+1]) {
+                    line.setAttribute('x1', nodes[i].offsetLeft);
+                    line.setAttribute('y1', nodes[i].offsetTop);
+                    line.setAttribute('x2', nodes[i+1].offsetLeft);
+                    line.setAttribute('y2', nodes[i+1].offsetTop);
+                    
+                    if (i < currentLevelIndex) {
+                        line.classList.add('active');
+                    } else {
+                        line.classList.remove('active');
+                    }
+                }
+            }
+
+            const targetNode = document.getElementById(`node-${currentLevelIndex}`);
+            if (targetNode) {
+                playerCookie.style.left = `${targetNode.offsetLeft}px`;
+                playerCookie.style.top = `${targetNode.offsetTop}px`;
+            }
+
+            for (let i = 0; i < 3; i++) {
+                if (nodes[i]) {
+                    if (i < currentLevelIndex) {
+                        nodes[i].className = "cookie-node completed";
+                    } else if (i === currentLevelIndex) {
+                        nodes[i].className = "cookie-node active";
+                    } else {
+                        nodes[i].className = "cookie-node";
+                    }
+                }
+            }
+        }
+
+        function loadQuizQuestion() {
+            const questionsPula = gameDatabase[activeCategory][activeSubcategory];
+            
+            if (currentLevelIndex >= questionsPula.length) {
+                document.getElementById('win-message').innerHTML = `Gratulacje! Przeszedłeś całą mapę <b style="color:var(--accent-blue)">${activeSubcategory}</b> w kategorii <b>${activeCategory}</b>!`;
+                switchView('view-win');
+                return;
+            }
+
+            const currentData = questionsPula[currentLevelIndex];
+            document.getElementById('question-box').innerText = currentData.question;
+
+            const answersContainer = document.getElementById('answers-container');
+            answersContainer.innerHTML = '';
+
+            currentData.answers.forEach((ans, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'menu-btn';
+                btn.innerText = ans;
+                btn.onclick = () => verifyQuizAnswer(idx, btn);
+                answersContainer.appendChild(btn);
+            });
+
+            setTimeout(updateMapStructure, 50);
+        }
+
+        function verifyQuizAnswer(selectedIdx, buttonEl) {
+            if (!canClick) return;
+
+            const currentData = gameDatabase[activeCategory][activeSubcategory][currentLevelIndex];
+
+            if (selectedIdx === currentData.correct) {
+                canClick = false;
+                buttonEl.classList.add('correct-flash');
+                gameContainer.classList.add('level-up-anim');
+
+                setTimeout(() => {
+                    gameContainer.classList.remove('level-up-anim');
+                    currentLevelIndex++;
+                    canClick = true;
+                    loadQuizQuestion();
+                }, 900);
+            } else {
+                canClick = false;
+                buttonEl.classList.add('wrong-flash');
+                setTimeout(() => {
+                    buttonEl.classList.remove('wrong-flash');
+                    canClick = true;
+                }, 500);
+            }
+        }
+
+        // WYWOŁANIE SPRAWDZENIA DOSTĘPU PRZY ŁADOWANIU STRONY
+        window.addEventListener('load', () => {
+            checkGameAccess();
+        });
+        window.addEventListener('resize', updateMapStructure);
+    </script>
+</body>
+</html>
