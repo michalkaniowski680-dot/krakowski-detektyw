@@ -291,6 +291,23 @@
             min-height: 60px;
         }
 
+        /* STYL DLA NOWEGO KONTENERA NA ZDJĘCIA W QUIZIE */
+        #question-image-container {
+            width: 100%;
+            display: none;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        #question-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 12px;
+            border: 2px solid rgba(244, 208, 63, 0.4);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            object-fit: cover;
+        }
+
         .level-up-anim {
             animation: levelUpPulse 0.5s ease-in-out;
         }
@@ -417,6 +434,10 @@
                 <div class="cookie-node" id="node-2">3<div class="node-label">Skarbiec</div></div>
             </div>
 
+            <div id="question-image-container">
+                <img id="question-image" src="" alt="Podgląd zagadki">
+            </div>
+
             <div id="question-box">Treść pytania...</div>
             <div class="grid-menu answers-grid" id="answers-container"></div>
         </div>
@@ -457,7 +478,12 @@
         const gameDatabase = {
             "Rynek Główny": {
                 "Sukiennice": [
-                    { question: "Co znajduje się na dachu attyki Sukiennic w formie rzeźb?", answers: ["Maszkarony (karykaturalne twarze)", "Figury polskich królów", "Rzeźby gołębi i orłów"], correct: 0 },
+                    { 
+                        question: "Co znajduje się na dachu attyki Sukiennic w formie rzeźb?", 
+                        answers: ["Maszkarony (karykaturalne twarze)", "Figury polskich królów", "Rzeźby gołębi i orłów"], 
+                        correct: 0,
+                        image: "R.jpg" // DOŁĄCZENIE GRAFIKI DO TEGO PYTANIA
+                    },
                     { question: "Jaki przedmiot wisi w jednym z przejść wewnątrz Sukiennic?", answers: ["Żelazny topór rycerski", "Średniowieczny nóż", "Złoty klucz do bram miasta"], correct: 1 },
                     { question: "Co mieści się obecnie na pierwszym piętrze Sukiennic?", answers: ["Galeria Malarstwa Polskiego", "Skarbiec miejski", "Restauracja u Wierzynka"], correct: 0 }
                 ],
@@ -644,7 +670,6 @@
             
             if (currentLevelIndex >= questionsPula.length) {
                 document.getElementById('win-message').innerHTML = `Gratulacje! Przeszedłeś całą mapę <b style="color:var(--accent-blue)">${activeSubcategory}</b> w kategorii <b>${activeCategory}</b>!`;
-                // Czyścimy poprzedni wpis w input formularza na wszelki wypadek
                 document.getElementById('player-name-input').value = '';
                 switchView('view-win');
                 return;
@@ -652,6 +677,18 @@
 
             const currentData = questionsPula[currentLevelIndex];
             document.getElementById('question-box').innerText = currentData.question;
+
+            // LOGIKA DOWIĄZANIA I DYNAMICZNEGO WYŚWIETLANIA GRAFIKI
+            const imgContainer = document.getElementById('question-image-container');
+            const imgElement = document.getElementById('question-image');
+
+            if (currentData.image) {
+                imgElement.src = currentData.image;
+                imgContainer.style.display = 'flex'; // Pokazuje kontener, jeśli zdjęcie istnieje
+            } else {
+                imgContainer.style.display = 'none'; // Ukrywa kontener dla pytań bez zdjęć
+                imgElement.src = '';
+            }
 
             const answersContainer = document.getElementById('answers-container');
             answersContainer.innerHTML = '';
@@ -697,28 +734,24 @@
         function generateCertificatePDF() {
             const inputName = document.getElementById('player-name-input').value.trim();
             
-            // Sprawdzamy czy wpisano imię
             if (!inputName) {
                 alert("Proszę najpierw wpisać swoje Imię i Nazwisko!");
                 return;
             }
 
-            // Podmieniamy wartości w niewidocznym elemencie szablonu
             document.getElementById('cert-pdf-name').innerText = inputName;
             document.getElementById('cert-pdf-topic').innerText = `${activeCategory} — ${activeSubcategory}`;
 
             const element = document.getElementById('cert-pdf-element');
             
-            // Konfiguracja konwertera HTML do PDF (wymiary arkusza A4 w poziomie)
             const options = {
                 margin:       0,
                 filename:     `Certyfikat_Detektywa_${inputName.replace(/\s+/g, '_')}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 }, // Wysoka rozdzielczość pliku
+                html2canvas:  { scale: 2 }, 
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
             };
 
-            // Wywołanie pobierania pliku
             html2pdf().set(options).from(element).save();
         }
 
