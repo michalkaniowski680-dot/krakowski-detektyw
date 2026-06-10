@@ -291,7 +291,7 @@
             min-height: 60px;
         }
 
-        /* STYL DLA NOWEGO KONTENERA NA ZDJĘCIA W QUIZIE */
+        /* KONTENER NA ZDJĘCIA */
         #question-image-container {
             width: 100%;
             display: none;
@@ -337,7 +337,6 @@
             animation: shake 0.4s ease;
         }
 
-        /* KLASA DO FORMULARZA NA KOŃCU */
         .cert-form {
             margin: 15px 0;
             display: flex;
@@ -354,10 +353,9 @@
             font-size: 1rem;
         }
 
-        /* STYL UKRYTEGO SZABLONU CERTYFIKATU (A4 Poziomo dla html2pdf) */
         #cert-template-hidden {
             position: absolute;
-            left: -9999px; /* Całkowicie schowany przed użytkownikiem */
+            left: -9999px;
             top: -9999px;
         }
         .cert-body {
@@ -482,7 +480,7 @@
                         question: "Co znajduje się na dachu attyki Sukiennic w formie rzeźb?", 
                         answers: ["Maszkarony (karykaturalne twarze)", "Figury polskich królów", "Rzeźby gołębi i orłów"], 
                         correct: 0,
-                        image: "R.jpg" // DOŁĄCZENIE GRAFIKI DO TEGO PYTANIA
+                        image: "./R.jpg" // Poprawna ścieżka względna dla GitHub Pages (Wielkość liter ma znaczenie!)
                     },
                     { question: "Jaki przedmiot wisi w jednym z przejść wewnątrz Sukiennic?", answers: ["Żelazny topór rycerski", "Średniowieczny nóż", "Złoty klucz do bram miasta"], correct: 1 },
                     { question: "Co mieści się obecnie na pierwszym piętrze Sukiennic?", answers: ["Galeria Malarstwa Polskiego", "Skarbiec miejski", "Restauracja u Wierzynka"], correct: 0 }
@@ -678,15 +676,14 @@
             const currentData = questionsPula[currentLevelIndex];
             document.getElementById('question-box').innerText = currentData.question;
 
-            // LOGIKA DOWIĄZANIA I DYNAMICZNEGO WYŚWIETLANIA GRAFIKI
             const imgContainer = document.getElementById('question-image-container');
             const imgElement = document.getElementById('question-image');
 
             if (currentData.image) {
                 imgElement.src = currentData.image;
-                imgContainer.style.display = 'flex'; // Pokazuje kontener, jeśli zdjęcie istnieje
+                imgContainer.style.display = 'flex';
             } else {
-                imgContainer.style.display = 'none'; // Ukrywa kontener dla pytań bez zdjęć
+                imgContainer.style.display = 'none';
                 imgElement.src = '';
             }
 
@@ -730,7 +727,6 @@
             }
         }
 
-        // FUNKCJA GENERUJĄCA I POBIERAJĄCA CERTYFIKAT W PDF
         function generateCertificatePDF() {
             const inputName = document.getElementById('player-name-input').value.trim();
             
