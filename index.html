@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Krakowski Detektyw: Mapa Tajemnic</title>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
             --bg-color: #0b1325;
@@ -318,6 +319,53 @@
             color: var(--error);
             animation: shake 0.4s ease;
         }
+
+        /* KLASA DO FORMULARZA NA KOŃCU */
+        .cert-form {
+            margin: 15px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
+        }
+        .cert-form input {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: #111a36;
+            color: white;
+            font-size: 1rem;
+        }
+
+        /* STYL UKRYTEGO SZABLONU CERTYFIKATU (A4 Poziomo dla html2pdf) */
+        #cert-template-hidden {
+            position: absolute;
+            left: -9999px; /* Całkowicie schowany przed użytkownikiem */
+            top: -9999px;
+        }
+        .cert-body {
+            width: 297mm;
+            height: 210mm;
+            background: #fffdf9;
+            color: #333;
+            box-sizing: border-box;
+            padding: 25mm;
+            border: 15px double #d4af37;
+            outline: 5px solid #1e3d59;
+            outline-offset: -20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-family: 'Georgia', serif;
+        }
+        .cert-title { font-size: 50px; color: #1e3d59; margin: 0; font-weight: bold; letter-spacing: 2px;}
+        .cert-subtitle { font-size: 18px; text-transform: uppercase; letter-spacing: 2px; color: #666; margin-top: 5px;}
+        .cert-name { font-size: 36px; color: #d4af37; font-weight: bold; margin: 30px 0 15px 0; border-bottom: 2px solid #ddd; min-width: 450px; padding-bottom: 5px; font-family: 'Montserrat', sans-serif;}
+        .cert-text { font-size: 18px; line-height: 1.6; max-width: 700px; margin: 10px 0; color: #444;}
+        .cert-footer { margin-top: 50px; width: 80%; display: flex; justify-content: space-between; font-size: 14px; color: #555; font-family: 'Montserrat', sans-serif;}
+        .cert-sig { border-top: 1px solid #777; width: 180px; padding-top: 8px; text-align: center; }
     </style>
 </head>
 <body>
@@ -375,10 +423,34 @@
 
         <div id="view-win" class="view">
             <div class="headline" style="color: var(--accent-gold); font-size: 1.6rem;">Pula Ukończona! 🍪</div>
-            <div id="win-message" style="text-align: center; margin: 20px 0; line-height: 1.6;">Doskonale poradzisz sobie z tą dziedziną wiedzy.</div>
-            <button class="menu-btn" style="background: var(--accent-blue); color: white;" onclick="switchView('view-categories')">Wybierz inną kategorię</button>
+            <div id="win-message" style="text-align: center; margin: 10px 0; line-height: 1.6;">Doskonale poradzisz sobie z tą dziedziną wiedzy.</div>
+            
+            <div class="cert-form">
+                <label for="player-name-input" style="font-weight: bold; color: var(--accent-gold); font-size: 0.9rem;">WPISZ SWOJE IMIĘ I NAZWISKO DO CERTYFIKATU:</label>
+                <input type="text" id="player-name-input" placeholder="np. Jan Kowalski">
+                <button class="menu-btn" style="background: var(--success); color: white; padding: 12px; margin-top: 5px;" onclick="generateCertificatePDF()">📥 Pobierz Oficjalny Certyfikat (PDF)</button>
+            </div>
+
+            <button class="menu-btn" style="background: var(--accent-blue); color: white; margin-top: 15px;" onclick="switchView('view-categories')">Wybierz inną kategorię</button>
         </div>
 
+    </div>
+
+    <div id="cert-template-hidden">
+        <div class="cert-body" id="cert-pdf-element">
+            <h1 class="cert-title">CERTYFIKAT OKRYWCY</h1>
+            <p class="cert-subtitle">Gry Miejskiej: Krakowski Detektyw</p>
+            <br>
+            <p class="cert-text">Niniejszym zaświadcza się, że wybitny śledczy</p>
+            <div class="cert-name" id="cert-pdf-name">Jan Kowalski</div>
+            <p class="cert-text">wykazał się niezwykłą mądrością, spostrzegawczością oraz bezbłędną wiedzą, rozwiązując wszystkie zagadki na mapie tajemnic w sekcji:</p>
+            <p class="cert-text" id="cert-pdf-topic" style="font-weight: bold; color: #1e3d59; font-size: 22px; font-family:'Montserrat',sans-serif;"></p>
+            
+            <div class="cert-footer">
+                <div class="cert-sig">Data: 2026 r.</div>
+                <div class="cert-sig">Główny Inspektor Miasta</div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -427,16 +499,11 @@
             if (viewId === 'view-categories') renderCategories();
         }
 
-        // SPRAWDZENIE STATUSU BLOKADY PRZY URUCHOMIENIU
         function checkGameAccess() {
-            // Sprawdzamy czy w pamięci przeglądarki zapisano już poprawny kod
             const isUnlocked = localStorage.getItem('krakow_game_unlocked');
-
             if (isUnlocked === 'true') {
-                // Jeśli gra była już odblokowana, przechodzimy prosto do menu
                 switchView('view-categories');
             } else {
-                // W przeciwnym razie odpalamy skaner na dzień dobry
                 initStartScanner();
             }
         }
@@ -472,7 +539,6 @@
                 msgDiv.innerText = "Dostęp przyznany! Witamy w grze.";
                 msgDiv.style.color = "var(--success)";
                 
-                // ZAPISUJEMY W LOCALSTORAGE, ŻE GRA JEST ODBLOKOWANA
                 localStorage.setItem('krakow_game_unlocked', 'true');
                 
                 if (html5QrcodeScanner) {
@@ -514,7 +580,7 @@
                 const btn = document.createElement('button');
                 btn.className = 'menu-btn';
                 btn.innerText = subCat;
-                btn.onclick = () => startQuizPula(subCat); // Wchodzi od razu bez skanowania!
+                btn.onclick = () => startQuizPula(subCat);
                 container.appendChild(btn);
             });
 
@@ -578,6 +644,8 @@
             
             if (currentLevelIndex >= questionsPula.length) {
                 document.getElementById('win-message').innerHTML = `Gratulacje! Przeszedłeś całą mapę <b style="color:var(--accent-blue)">${activeSubcategory}</b> w kategorii <b>${activeCategory}</b>!`;
+                // Czyścimy poprzedni wpis w input formularza na wszelki wypadek
+                document.getElementById('player-name-input').value = '';
                 switchView('view-win');
                 return;
             }
@@ -625,7 +693,35 @@
             }
         }
 
-        // WYWOŁANIE SPRAWDZENIA DOSTĘPU PRZY ŁADOWANIU STRONY
+        // FUNKCJA GENERUJĄCA I POBIERAJĄCA CERTYFIKAT W PDF
+        function generateCertificatePDF() {
+            const inputName = document.getElementById('player-name-input').value.trim();
+            
+            // Sprawdzamy czy wpisano imię
+            if (!inputName) {
+                alert("Proszę najpierw wpisać swoje Imię i Nazwisko!");
+                return;
+            }
+
+            // Podmieniamy wartości w niewidocznym elemencie szablonu
+            document.getElementById('cert-pdf-name').innerText = inputName;
+            document.getElementById('cert-pdf-topic').innerText = `${activeCategory} — ${activeSubcategory}`;
+
+            const element = document.getElementById('cert-pdf-element');
+            
+            // Konfiguracja konwertera HTML do PDF (wymiary arkusza A4 w poziomie)
+            const options = {
+                margin:       0,
+                filename:     `Certyfikat_Detektywa_${inputName.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 }, // Wysoka rozdzielczość pliku
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            // Wywołanie pobierania pliku
+            html2pdf().set(options).from(element).save();
+        }
+
         window.addEventListener('load', () => {
             checkGameAccess();
         });
