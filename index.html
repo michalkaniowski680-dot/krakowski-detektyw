@@ -291,7 +291,6 @@
             min-height: 60px;
         }
 
-        /* KONTENER NA ZDJĘCIA */
         #question-image-container {
             width: 100%;
             display: none;
@@ -432,8 +431,8 @@
 
         const GLOBAL_ACCESS_CODE = "KRAKOW-DETEKTYW-2026";
         
-        // TUTAJ WPISZ TWÓJ LINK DO PLIKU CERTYFIKAT.HTML NA GITHUB PAGES
-        const URL_CERTYFIKATU = "https://twoja-nazwa-uzytkownika.github.io/nazwa-repozytorium/certyfikat.html";
+        // Adres URL hostingu GitHub Pages dla pliku certyfikat.html
+        const URL_CERTYFIKATU = "https://michalkaniowski680-dot.github.io/krakowski-detektyw/certyfikat.html";
 
         let activeCategory = "";
         let activeSubcategory = "";
@@ -594,7 +593,7 @@
         function loadQuizQuestion() {
             const questionsPula = gameDatabase[activeCategory][activeSubcategory];
             
-            // JEŚLI PRZESZEDŁEŚ WSZYSTKIE PYTANIA: Następuje automatyczne przekierowanie
+            // Po zaliczeniu wszystkich pytań gra automatycznie przechodzi na stronę certyfikatu
             if (currentLevelIndex >= questionsPula.length) {
                 window.location.href = URL_CERTYFIKATU;
                 return;
