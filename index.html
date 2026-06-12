@@ -336,51 +336,6 @@
             color: var(--error);
             animation: shake 0.4s ease;
         }
-
-        .cert-form {
-            margin: 15px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            text-align: left;
-        }
-        .cert-form input {
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: #111a36;
-            color: white;
-            font-size: 1rem;
-        }
-
-        #cert-template-hidden {
-            position: absolute;
-            left: -9999px;
-            top: -9999px;
-        }
-        .cert-body {
-            width: 297mm;
-            height: 210mm;
-            background: #fffdf9;
-            color: #333;
-            box-sizing: border-box;
-            padding: 25mm;
-            border: 15px double #d4af37;
-            outline: 5px solid #1e3d59;
-            outline-offset: -20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            font-family: 'Georgia', serif;
-        }
-        .cert-title { font-size: 50px; color: #1e3d59; margin: 0; font-weight: bold; letter-spacing: 2px;}
-        .cert-subtitle { font-size: 18px; text-transform: uppercase; letter-spacing: 2px; color: #666; margin-top: 5px;}
-        .cert-name { font-size: 36px; color: #d4af37; font-weight: bold; margin: 30px 0 15px 0; border-bottom: 2px solid #ddd; min-width: 450px; padding-bottom: 5px; font-family: 'Montserrat', sans-serif;}
-        .cert-text { font-size: 18px; line-height: 1.6; max-width: 700px; margin: 10px 0; color: #444;}
-        .cert-footer { margin-top: 50px; width: 80%; display: flex; justify-content: space-between; font-size: 14px; color: #555; font-family: 'Montserrat', sans-serif;}
-        .cert-sig { border-top: 1px solid #777; width: 180px; padding-top: 8px; text-align: center; }
     </style>
 </head>
 <body>
@@ -440,36 +395,6 @@
             <div class="grid-menu answers-grid" id="answers-container"></div>
         </div>
 
-        <div id="view-win" class="view">
-            <div class="headline" style="color: var(--accent-gold); font-size: 1.6rem;">Pula Ukończona! 🍪</div>
-            <div id="win-message" style="text-align: center; margin: 10px 0; line-height: 1.6;">Doskonale poradzisz sobie z tą dziedziną wiedzy.</div>
-            
-            <div class="cert-form">
-                <label for="player-name-input" style="font-weight: bold; color: var(--accent-gold); font-size: 0.9rem;">WPISZ SWOJE IMIĘ I NAZWISKO DO CERTYFIKATU:</label>
-                <input type="text" id="player-name-input" placeholder="np. Jan Kowalski">
-                <button class="menu-btn" style="background: var(--success); color: white; padding: 12px; margin-top: 5px;" onclick="generateCertificatePDF()">📥 Pobierz Oficjalny Certyfikat (PDF)</button>
-            </div>
-
-            <button class="menu-btn" style="background: var(--accent-blue); color: white; margin-top: 15px;" onclick="switchView('view-categories')">Wybierz inną kategorię</button>
-        </div>
-
-    </div>
-
-    <div id="cert-template-hidden">
-        <div class="cert-body" id="cert-pdf-element">
-            <h1 class="cert-title">CERTYFIKAT OKRYWCY</h1>
-            <p class="cert-subtitle">Gry Miejskiej: Krakowski Detektyw</p>
-            <br>
-            <p class="cert-text">Niniejszym zaświadcza się, że wybitny śledczy</p>
-            <div class="cert-name" id="cert-pdf-name">Jan Kowalski</div>
-            <p class="cert-text">wykazał się niezwykłą mądrością, spostrzegawczością oraz bezbłędną wiedzą, rozwiązując wszystkie zagadki na mapie tajemnic w sekcji:</p>
-            <p class="cert-text" id="cert-pdf-topic" style="font-weight: bold; color: #1e3d59; font-size: 22px; font-family:'Montserrat',sans-serif;"></p>
-            
-            <div class="cert-footer">
-                <div class="cert-sig">Data: 2026 r.</div>
-                <div class="cert-sig">Główny Inspektor Miasta</div>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -480,7 +405,7 @@
                         question: "Co znajduje się na dachu attyki Sukiennic w formie rzeźb?", 
                         answers: ["Maszkarony (karykaturalne twarze)", "Figury polskich królów", "Rzeźby gołębi i orłów"], 
                         correct: 0,
-                        image: "./R.jpg" // 1
+                        image: "./R.jpg"
                     },
                     { question: "Jaki przedmiot wisi w jednym z przejść wewnątrz Sukiennic?", answers: ["Żelazny topór rycerski", "Średniowieczny nóż", "Złoty klucz do bram miasta"], correct: 1 },
                     { question: "Co mieści się obecnie na pierwszym piętrze Sukiennic?", answers: ["Galeria Malarstwa Polskiego", "Skarbiec miejski", "Restauracja u Wierzynka"], correct: 0 }
@@ -506,6 +431,9 @@
         };
 
         const GLOBAL_ACCESS_CODE = "KRAKOW-DETEKTYW-2026";
+        
+        // TUTAJ WPISZ TWÓJ LINK DO PLIKU CERTYFIKAT.HTML NA GITHUB PAGES
+        const URL_CERTYFIKATU = "https://twoja-nazwa-uzytkownika.github.io/nazwa-repozytorium/certyfikat.html";
 
         let activeCategory = "";
         let activeSubcategory = "";
@@ -666,10 +594,9 @@
         function loadQuizQuestion() {
             const questionsPula = gameDatabase[activeCategory][activeSubcategory];
             
+            // JEŚLI PRZESZEDŁEŚ WSZYSTKIE PYTANIA: Następuje automatyczne przekierowanie
             if (currentLevelIndex >= questionsPula.length) {
-                document.getElementById('win-message').innerHTML = `Gratulacje! Przeszedłeś całą mapę <b style="color:var(--accent-blue)">${activeSubcategory}</b> w kategorii <b>${activeCategory}</b>!`;
-                document.getElementById('player-name-input').value = '';
-                switchView('view-win');
+                window.location.href = URL_CERTYFIKATU;
                 return;
             }
 
@@ -725,30 +652,6 @@
                     canClick = true;
                 }, 500);
             }
-        }
-
-        function generateCertificatePDF() {
-            const inputName = document.getElementById('player-name-input').value.trim();
-            
-            if (!inputName) {
-                alert("Proszę najpierw wpisać swoje Imię i Nazwisko!");
-                return;
-            }
-
-            document.getElementById('cert-pdf-name').innerText = inputName;
-            document.getElementById('cert-pdf-topic').innerText = `${activeCategory} — ${activeSubcategory}`;
-
-            const element = document.getElementById('cert-pdf-element');
-            
-            const options = {
-                margin:       0,
-                filename:     `Certyfikat_Detektywa_${inputName.replace(/\s+/g, '_')}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 }, 
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
-            };
-
-            html2pdf().set(options).from(element).save();
         }
 
         window.addEventListener('load', () => {
