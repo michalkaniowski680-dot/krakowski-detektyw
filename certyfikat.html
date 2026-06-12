@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automatyczny Generator Certyfikatów</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Panel kontrolny (Formularz) */
+        .form-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Styl Certyfikatu (wymiary kartki A4 w poziomie: 297mm x 210mm) */
+        #certificate {
+            width: 297mm;
+            height: 210mm;
+            background: white;
+            padding: 20mm;
+            box-sizing: border-box;
+            border: 15px double #d4af37; /* Złota ramka */
+            outline: 5px solid #1e3d59;
+            outline-offset: -20px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: #fffdf9;
+        }
+
+        /* Elementy tekstu na certyfikacie */
+        .cert-title {
+            font-size: 50px;
+            color: #1e3d59;
+            margin: 0 0 10px 0;
+            font-family: 'Georgia', serif;
+        }
+
+        .cert-subtitle {
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #555;
+        }
+
+        .cert-name {
+            font-size: 38px;
+            color: #d4af37;
+            font-weight: bold;
+            margin: 20px 0;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 5px;
+            min-width: 300px;
+        }
+
+        .cert-text {
+            font-size: 18px;
+            color: #333;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .cert-footer {
+            margin-top: 50px;
+            width: 80%;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature {
+            border-top: 1px solid #333;
+            width: 150px;
+            padding-top: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <div class="form-group">
+            <label for="inputName">Imię i Nazwisko:</label>
+            <input type="text" id="inputName" placeholder="Jan Kowalski" oninput="updateCertificate()">
+        </div>
+        <div class="form-group">
+            <label for="inputCourse">Nazwa Szkolenia / Osiągnięcia:</label>
+            <input type="text" id="inputCourse" placeholder="Kurs Programowania Webowego" oninput="updateCertificate()">
+        </div>
+        <button onclick="downloadPDF()">Pobierz Certyfikat (PDF)</button>
+    </div>
+
+    <div id="certificate">
+        <h1 class="cert-title">CERTYFIKAT</h1>
+        <p class="cert-subtitle">Ukończenia projektu</p>
+        
+        <p class="cert-text">Niniejszym potwierdza się, że</p>
+        <div id="certName" class="cert-name">Jan Kowalski</div>
+        
+        <p class="cert-text">z sukcesem ukończył(a) szkolenie z zakresu:</p>
+        <p id="certCourse" style="font-size: 24px; font-weight: bold; color: #1e3d59; margin: 10px 0;">Kurs Programowania Webowego</p>
+        
+        <div class="cert-footer">
+            <div class="signature">Data i miejsce</div>
+            <div class="signature">Podpis Organizatora</div>
+        </div>
+    </div>
+
+    <script>
+        // Funkcja, która na bieżąco aktualizuje tekst na certyfikacie podczas pisania
+        function updateCertificate() {
+            const nameInput = document.getElementById('inputName').value;
+            const courseInput = document.getElementById('inputCourse').value;
+
+            // Jeśli pole jest puste, ustawia domyślny tekst
+            document.getElementById('certName').innerText = nameInput ? nameInput : "Jan Kowalski";
+            document.getElementById('certCourse').innerText = courseInput ? courseInput : "Kurs Programowania Webowego";
+        }
+
+        // Funkcja odpowiadająca za automatyczne generowanie i pobieranie pliku PDF
+        function downloadPDF() {
+            const element = document.getElementById('certificate');
+            const name = document.getElementById('inputName').value || 'Certyfikat';
+            
+            // Konfiguracja wyglądu pliku PDF
+            const options = {
+                margin:       0,
+                filename:     `Certyfikat_${name.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 }, // Wyższa skala = lepsza jakość
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' } // Format A4 w poziomie
+            };
+
+            // Uruchomienie procesu pobierania
+            html2pdf().set(options).from(element).save();
+        }
+    </script>
+
+</body>
+</html>
